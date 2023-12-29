@@ -1,5 +1,6 @@
 import copy
 import enum
+import json
 import re
 from Spatter.Executor import *
 from Spatter.Log import *
@@ -15,11 +16,11 @@ class CauseType(enum.Enum):
 
 
 class QueriesReducor:
-    def __init__(self, executor: Executor, reduce_file_path) -> None:
-        self.t0_queries = []
-        self.insert_queries = []
+    def __init__(self, executor: Executor) -> None:
+        self.t0_queries_list = []
+        self.insert_queries_list = []
         self.executor = executor
-        self.file_path = reduce_file_path
+        self.spatter_path = None
         self.query1 = ""
         self.query2 = ""
         self.table_index = {}
@@ -29,7 +30,7 @@ class QueriesReducor:
         self.cdt_pair = [-1, -1]
         self.induce_num = 0
 
-        self.induce_cases_dir = "/log/induce-cases/"
+        self.induce_cases_dir = "/log/trigger-cases/"
         if not os.path.exists(self.induce_cases_dir):
             os.makedirs(self.induce_cases_dir)
         
@@ -37,33 +38,29 @@ class QueriesReducor:
     def SetErrors(self, errors):
         self.errors = errors
     
-    def Reduce(self, query1: str, query2: str):
+    def Reduce(self):
 
-        self.query1 = ' '.join(query1.split('\n'))
-        self.query2 = ' '.join(query2.split('\n'))
-        
-        self.GetAllQueries()
         self.executor.log.WriteResult("Get all queries.", True)
         
-        if self.IsKownIssue(self.query1, self.query2):
+        if self.IsKownIssue():
             self.executor.log.WriteResult("Caused by kown issue.", True)
             return
         
         self.executor.log.ChangeFileName(self.executor.log.name + '-reduce')
         reduce_queries = self.DetaDebugging() + [self.query1, self.query2]
         self.executor.log.ChangeFileName(self.executor.log.name + '-reduce-result')
-        self.executor.log.WriteResult(''.join(reduce_queries))
+        self.executor.log.WriteResult('\n'.join(reduce_queries))
 
         self.executor.log.ChangeFileName(self.executor.log.name)
         
 
-    def IsKownIssue(self, o1: str, o2: str):
+    def IsKownIssue(self):
         
-        table1 = re.findall(r'\bFROM ([A-Za-z0-9_]+) As\b', o1)[0]
-        table2 = re.findall(r'\bFROM ([A-Za-z0-9_]+) As\b', o2)[0]
+        table1 = re.findall(r'\bFROM ([A-Za-z0-9_]+) As\b', self.query1)[0]
+        table2 = re.findall(r'\bFROM ([A-Za-z0-9_]+) As\b', self.query2)[0]
         
-        query1 = o1.replace('COUNT(*)', 'a1.id, a2.id').replace(';', ' ORDER BY a1.id, a2.id;')
-        query2 = o2.replace('COUNT(*)', 'a1.id, a2.id').replace(';', ' ORDER BY a1.id, a2.id;')
+        query1 = self.query1.replace('COUNT(*)', 'a1.id, a2.id').replace(';', ' ORDER BY a1.id, a2.id;')
+        query2 = self.query2.replace('COUNT(*)', 'a1.id, a2.id').replace(';', ' ORDER BY a1.id, a2.id;')
         
         self.executor.ExecuteSelect(query1, self.errors)
         rows1 = self.executor.rows
@@ -92,15 +89,15 @@ class QueriesReducor:
 
         self.executor.log.WriteResult(dif_rows, True)
         
-        func = o1.split('ON')[1].split('WHERE')[0]
-        self.executor.log.WriteResult(func, True)
+        func1 = query1.split('ON')[1].split('WHERE')[0]
+        func2 = query2.split('ON')[1].split('WHERE')[0]
 
         for dif_row in dif_rows:
             id1 = dif_row[0]
             id2 = dif_row[1]
 
-            simple1 = f'''SELECT {func} FROM {table1} as a1, {table1} as a2 WHERE a1.id = {id1} and a2.id = {id2};'''
-            simple2 = f'''SELECT {func} FROM {table2} as a1, {table2} as a2 WHERE a1.id = {id1} and a2.id = {id2};'''
+            simple1 = f'''SELECT {func1} FROM {table1} as a1, {table1} as a2 WHERE a1.id = {id1} and a2.id = {id2};'''
+            simple2 = f'''SELECT {func2} FROM {table2} as a1, {table2} as a2 WHERE a1.id = {id1} and a2.id = {id2};'''
 
             self.executor.ExecuteSelect(simple1, self.errors)
             
@@ -130,8 +127,21 @@ class QueriesReducor:
 
         return True
 
-    def GetAllQueries(self):
-        with open(self.file_path) as of:
+    def GetAllQueriesByJson(self, json_path):
+        assert(len(self.t0_queries_list) == 0)
+        with open(json_path) as of:
+            d = json.load(of)
+        self.query1 = d["query1"].strip()
+        self.query2 = d["query2"].strip()
+        t0_queries = d["t0_queries"].split(';')
+        self.t0_queries_list = [q.strip() for q in t0_queries if q != '']
+        for q in self.t0_queries_list:
+            if q.startswith('INSERT INTO t0'):
+                self.insert_queries_list.append(q)
+
+    def GetAllQueriesByline(self, spatter_path):
+        assert(len(self.t0_queries_list) == 0)
+        with open(spatter_path) as of:
             line = of.readline()
             while(line):
                 if line.startswith('SELECT'):
@@ -139,9 +149,9 @@ class QueriesReducor:
                     line = of.readline()
                     continue
                 if line[0] != '-' and line != '\n':
-                    self.t0_queries.append(line)
+                    self.t0_queries_list.append(line)
                 if line.startswith('INSERT INTO t0'):
-                    self.insert_queries.append(line)
+                    self.insert_queries_list.append(line)
                 
                 line = of.readline()
 
@@ -149,23 +159,23 @@ class QueriesReducor:
 
     def DetaDebugging(self):
         self.executor.log.WriteResult("Deta debugging begins...", True)
-        ql = len(self.insert_queries)
+        ql = len(self.insert_queries_list)
         
         i = ql // 2
         
-        current_queries = copy.deepcopy(self.t0_queries)
+        current_queries = copy.deepcopy(self.t0_queries_list)
 
         while(i >= 1):
             
-            l = list(range(0, len(self.insert_queries), i))
+            l = list(range(0, len(self.insert_queries_list), i))
             remove_insert = []
             self.executor.log.WriteResult(l, True)
             for e in l:
-                start = e; end = min(e + i, len(self.insert_queries) - 1)
+                start = e; end = min(e + i, len(self.insert_queries_list) - 1)
                 execute_queries = copy.deepcopy(current_queries)
                 for j in range(start, end):
                     
-                    execute_queries.remove(self.insert_queries[j])
+                    execute_queries.remove(self.insert_queries_list[j])
                 
                 self.ExecuteQueries(execute_queries)
                 self.executor.log.WriteResult(f'start: {start}, end: {end},', True)
@@ -182,19 +192,21 @@ class QueriesReducor:
                 i = i // 2
             else:
                 new_insert = []
-                for i in range(len(self.insert_queries)):
+                for i in range(len(self.insert_queries_list)):
                     if i not in remove_insert:
-                        new_insert.append(self.insert_queries[i])
-                self.insert_queries = new_insert
-                i = len(self.insert_queries) // 2
+                        new_insert.append(self.insert_queries_list[i])
+                self.insert_queries_list = new_insert
+                i = len(self.insert_queries_list) // 2
         
         self.executor.log.WriteResult('\n'.join(current_queries), True)
+        current_queries = [q+";" for q in current_queries if q != ""]
         return current_queries
     
     def ExecuteQueries(self, queries):
         # insert_errors = ['Line has no points', 'First argument must be a LINESTRING']
         # select_errors = ["This function only accepts LINESTRING as arguments.", 'TopologyException']
         for q in queries:
+            if q == '': continue
             if q.startswith('SELECT'):
                 self.executor.ExecuteSelect(q, self.errors)
             elif q.startswith('INSERT'):

@@ -170,7 +170,7 @@ class Spatter():
                 exit(-1)
             self.executor.ExecuteUpdate(query)
 
-            query = tu.UpdateTableIsValid(t)
+            query = tu.UpdateValidFromTable(t, "t0")
             self.executor.ExecuteUpdate(query)
             table_list.remove(t)
 
@@ -221,9 +221,8 @@ class Spatter():
             
         tu.table_list.append("t0") 
 
-        reduce_file_path = self.log.GetResultPath()
-        reduce = QueriesReducor(self.executor, reduce_file_path)
-        reduce.GetAllQueries()
+        reduce = QueriesReducor(self.executor)
+        reduce.GetAllQueriesByline(self.log.GetResultPath())
 
         for i in range(0, 100):
             randomQueryGenerator = RandomQueryGenerator(tu.table_list)
@@ -247,7 +246,7 @@ class Spatter():
                 d['res1'] = str(res1)
                 d['query2'] = ' '.join(randomQueryGenerator.query_pair[1].split('\n'))
                 d['res2'] = str(res2)
-                d['t0_queries'] = ' '.join(' '.join(reduce.t0_queries).split('\n'))
+                d['t0_queries'] = ' '.join(' '.join(reduce.t0_queries_list).split('\n'))
                 file_name = time.strftime(f"%Y-%m-%d-%H:%M:%S-" + str(self.induce_num), time.localtime())
                 file_path = os.path.join(reduce.induce_cases_dir, file_name)
                 with open(file_path, 'w') as of:
@@ -262,11 +261,10 @@ class Spatter():
                     # exit(0)
 
     def RecordCrash(self, crash_query):
-        reduce_file_path = self.log.GetResultPath()
-        reduce = QueriesReducor(self.executor, reduce_file_path)
-        reduce.GetAllQueries()
+        reduce = QueriesReducor(self.executor)
+        reduce.GetAllQueriesByline(self.log.GetResultPath())
         d = {}
-        d['t0_queries'] = ' '.join(' '.join(reduce.t0_queries[:-1]).split('\n'))
+        d['t0_queries'] = ' '.join(' '.join(reduce.t0_queries_list[:-1]).split('\n'))
         d['crash'] = crash_query
         file_name = time.strftime(f"%Y-%m-%d-%H:%M:%S-crash-" + str(self.induce_num), time.localtime())
         file_path = os.path.join(reduce.induce_cases_dir, file_name)

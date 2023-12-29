@@ -45,7 +45,8 @@ class Executor():
 
     def ExecuteUpdate(self, query: str, errors = None):
         self.clear()
-        query_list = query.split(";")[:-1]
+        query_list = query.split(";")
+        query_list = [item for item in query_list if item != ""]
         for query in query_list:
             self.log.WriteResult(' '.join(query.split('\n')) + ';')
             try:    
