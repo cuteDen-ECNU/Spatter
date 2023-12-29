@@ -1,0 +1,7 @@
+FROM ubuntu:22.04
+RUN apt-get update && \
+ apt-get -y install vim python3 pip iputils-ping systemctl git gdb cmake openssl bison libssl-dev libncurses5-dev pkg-config
+
+COPY script script
+
+CMD ["sleep", "infinity"]

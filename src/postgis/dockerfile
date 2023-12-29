@@ -1,0 +1,8 @@
+FROM ubuntu:22.04
+RUN apt-get update && \
+ apt-get -y install vim python3 pip iputils-ping systemctl git bison flex cmake autoconf libtool libxml2-dev libproj-dev gdb libcunit1 libcunit1-doc libcunit1-dev tree lcov rsync && \
+ pip install psycopg2-binary shapely 
+
+COPY script script
+
+CMD ["sleep", "infinity"]

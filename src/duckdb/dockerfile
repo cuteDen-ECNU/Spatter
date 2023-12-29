@@ -1,0 +1,11 @@
+FROM ubuntu:22.04
+RUN apt-get update && \
+ apt-get -y install gcc-12 g++-12 vim python3 pip iputils-ping systemctl git bison flex cmake libssl-dev ninja-build openssl gdb \
+&& pip install psycopg2-binary shapely duckdb
+# 设置clang为默认编译器
+# RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+# RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+
+COPY script script
+
+CMD ["sleep", "infinity"]
