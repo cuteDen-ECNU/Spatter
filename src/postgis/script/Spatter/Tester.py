@@ -33,6 +33,7 @@ class Spatter():
         self.log:Log = Log(i)
         self.executor = Executor(self.log)
         self.induce_num = 0
+        self.spatter_time = None
 
     def CreateTable(self, table: str):
         self.executor.Execute(f'''DROP TABLE IF EXISTS {table}; ''')
@@ -59,8 +60,9 @@ class Spatter():
         return True
 
     def Spatter(self, configure: Configure):
+        self.spatter_time = Timer()
         
-        self.log.WriteResult(str(configure), True)
+        self.log.WriteResult(json.dumps(configure.d), True)
 
         ic = IndexCreator()
         self.CreateTable("t0")
@@ -70,9 +72,17 @@ class Spatter():
         self.CreateTable("t1")
         query = ic.createIndex("t1")
         self.executor.Execute(query)
-        gNum = 6
         
-        for i in range(0, gNum):
+
+        N = configure.GetGeometryNumber()
+        if configure.GetSmartGeneratorOn() == True:
+            random_n = N//3 + 1
+            smart_n = N - random_n
+        else:
+            random_n = N
+            smart_n = 0
+
+        for i in range(0, random_n):
             query = RandomGenerator.insertRandomly("t0", i)
             self.executor.ExecuteInsert(query, None)
 
@@ -81,65 +91,65 @@ class Spatter():
         insertErrorBox = InsertErrorBox()
         
         i = 0
-        while(i < 2*gNum):
+        while(i < smart_n):
             insert_func = random.choices(insert_type, weights=list(InsertGenerator.insert_weights.values()), k = 1)[0]
             if insert_func == InsertGenerator.InsertType.GeometryN:
-                query = InsertGenerator.insertGeometryN("t0", gNum + i)
+                query = InsertGenerator.insertGeometryN("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Polygonize:
-                query = InsertGenerator.insertPolygonize("t0", gNum + i)
+                query = InsertGenerator.insertPolygonize("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Boundary:
-                query = InsertGenerator.insertBoundary("t0", gNum + i)
+                query = InsertGenerator.insertBoundary("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.BoundingDiagonal:
-                query = InsertGenerator.insertBoundingDiagonal("t0", gNum + i)
+                query = InsertGenerator.insertBoundingDiagonal("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.CollectionExtract:
-                query = InsertGenerator.insertCollectionExtract("t0", gNum + i)
+                query = InsertGenerator.insertCollectionExtract("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.SetPoint:
-                query = InsertGenerator.insertSetPoint("t0", gNum + i)
+                query = InsertGenerator.insertSetPoint("t0", random_n + i)
                 insertErrorBox.UseSetPoint()
             elif insert_func == InsertGenerator.InsertType.Dump:
-                query = InsertGenerator.insertDump("t0", gNum + i)
+                query = InsertGenerator.insertDump("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.DumpRings:
-                query = InsertGenerator.insertDumpRings("t0", gNum + i)
+                query = InsertGenerator.insertDumpRings("t0", random_n + i)
                 insertErrorBox.UseDumpRings()
             elif insert_func == InsertGenerator.InsertType.ConvexHull:
-                query = InsertGenerator.insertConvexHull("t0", gNum + i)
+                query = InsertGenerator.insertConvexHull("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Collect0:
-                query = InsertGenerator.insertCollect0("t0", gNum + i)
+                query = InsertGenerator.insertCollect0("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Collect1:
-                query = InsertGenerator.insertCollect1("t0", gNum + i)
+                query = InsertGenerator.insertCollect1("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Collect2:
-                query = InsertGenerator.insertCollect2("t0", gNum + i)
+                query = InsertGenerator.insertCollect2("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Collect3:
-                query = InsertGenerator.insertCollect0("t0", gNum + i)
+                query = InsertGenerator.insertCollect0("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Scale:
-                query = InsertGenerator.insertScale("t0", gNum + i)
+                query = InsertGenerator.insertScale("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Normalize:
-                query = InsertGenerator.insertNormalize("t0", gNum + i)
+                query = InsertGenerator.insertNormalize("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Multi:
-                query = InsertGenerator.insertMulti("t0", gNum + i)
+                query = InsertGenerator.insertMulti("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.CollectionHomogenize:
-                query = InsertGenerator.insertCollectionHomogenize("t0", gNum + i)
+                query = InsertGenerator.insertCollectionHomogenize("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.ForceCollection:
-                query = InsertGenerator.insertForceCollection("t0", gNum + i)
+                query = InsertGenerator.insertForceCollection("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Affine2D:
-                query = InsertGenerator.insertAffine2D("t0", gNum + i)
+                query = InsertGenerator.insertAffine2D("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.PointOnSurface:
-                query = InsertGenerator.insertPointOnSurface("t0", gNum + i)
+                query = InsertGenerator.insertPointOnSurface("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.RemoveRepeatedPoints:
-                query = InsertGenerator.insertRemoveRepeatedPoints("t0", gNum + i)
+                query = InsertGenerator.insertRemoveRepeatedPoints("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.FlipCoordinates:
-                query = InsertGenerator.insertFlipCoordinates("t0", gNum + i)
+                query = InsertGenerator.insertFlipCoordinates("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.ForcePolygonCCW:
-                query = InsertGenerator.insertForcePolygonCCW("t0", gNum + i)
+                query = InsertGenerator.insertForcePolygonCCW("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.ForcePolygonCW:
-                query = InsertGenerator.insertForcePolygonCW("t0", gNum + i)
+                query = InsertGenerator.insertForcePolygonCW("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.NULL:
-                query = InsertGenerator.insertNull("t0", gNum + i)
+                query = InsertGenerator.insertNull("t0", random_n + i)
             else:
                 print(insert_func)
                 exit(-1)
-            insert_num = self.executor.ExecuteInsert(query, insertErrorBox.errors)
-            i += insert_num
+            self.executor.ExecuteInsert(query, insertErrorBox.errors)
+            i += self.executor.insert_num
             if self.executor.error == "crash":
                 self.RecordCrash(query)
         
@@ -259,6 +269,9 @@ class Spatter():
                 # if reduce.cause_type == None:
                 #     self.log.WriteResult("reduce.cause_type == None", note=True)
                     # exit(0)
+
+        self.log.WriteResult(self.executor.exe_time, True)
+        self.log.WriteResult(self.spatter_time.end(), True)
 
     def RecordCrash(self, crash_query):
         reduce = QueriesReducor(self.executor)

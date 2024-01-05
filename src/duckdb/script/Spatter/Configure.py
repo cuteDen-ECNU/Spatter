@@ -14,20 +14,25 @@ class Configure():
         self.d = d
 
     def GetSyntaxTrans(self):
-        return self.d["syntax_trans"]    
+        return self.d["transformation_on"]    
     
     def GetCoordinatesTrans(self):
-        return self.d["coordinates_trans"]    
+        return self.d["transformation_on"]    
     
     def GetName(self):
         return self.d["name"]    
     
     def GetUnit(self):
-        return self.d["unit"]
+        return self.d["unit_coverage_on"]
     
-    def GetGeneratorStatus(self):
-        return self.d["completely_random_gen"]
+    def GetSmartGeneratorOn(self):
+        return self.d["smart_generator_on"]
     
+    def GetGeometryNumber(self):
+        return self.d["geometry_number"]
+
+    def GetSeed(self):
+        return self.d["seed"]
 
     def __str__(self) -> str:
         return str(self.d)

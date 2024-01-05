@@ -10,11 +10,11 @@ if __name__ == '__main__':
     parser.add_argument("trigger_case_path", type=str, help="the path of a single trigger case")
     args = parser.parse_args()
     
-    trigger_path = args.trigger_case_path
+    trigger_path:str = args.trigger_case_path
     log = Log(0)
     executor = Executor(log)
     qr = QueriesReducor(executor)
-    qr.GetAllQueriesByJson(trigger_path)
+    qr.GetAllQueriesByJson(trigger_path.strip())
 
     insertErrorBox = InsertErrorBox()
     insertErrorBox.UseAll()

@@ -67,13 +67,6 @@ class TableUpdator():
             
             self.relation[t] = oracle
 
-    def UpdateTableScale(self, target_table: str, src_table: str, scale):
-        query = f'''UPDATE {target_table} 
-        SET geom = ST_Scale({src_table}.geom, {scale}, {scale})
-        FROM {src_table}
-        WHERE {target_table}.id = {src_table}.id;'''
-        return query
-
     def UpdateValidFromTable(self, target_table, src_table):
         return f'''UPDATE {target_table} SET valid = {src_table}.valid
         FROM {src_table}
@@ -81,6 +74,13 @@ class TableUpdator():
     
     def UpdateTableIsValid(self, table:str):
         query = f'''UPDATE {table} SET valid = ST_IsValid(geom);'''
+        return query
+
+    def UpdateTableScale(self, target_table: str, src_table: str, scale):
+        query = f'''UPDATE {target_table} 
+        SET geom = ST_Scale({src_table}.geom, {scale}, {scale})
+        FROM {src_table}
+        WHERE {target_table}.id = {src_table}.id;'''
         return query
     
     def UpdateTableMulti(self, table:str):

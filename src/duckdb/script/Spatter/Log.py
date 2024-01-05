@@ -19,7 +19,7 @@ class Log():
         self.of_error = open(self.error_path,"a+")
     
 
-    def WriteResult(self, log: str, note = False):
+    def WriteResult(self, log, note = False):
         if note == True:
             prefix = "-- "
         else:

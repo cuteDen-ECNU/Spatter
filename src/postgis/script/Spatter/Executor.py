@@ -1,8 +1,7 @@
-import pdb
-from time import sleep
 import time
 import psycopg2
 from Spatter.Log import *
+from Spatter.Timer import *
 
 class Executor():
     def __init__(self, log) -> None:
@@ -17,47 +16,60 @@ class Executor():
         self.rows = []
         self.error = None
         self.error_list = ['TopologyException']
+        self.insert_num = None
+
+        self.exe_time = 0
         
     def ExecuteInsert(self, query: str, errors) -> int:
         self.clear()
         self.log.WriteResult(' '.join(query.split('\n')))
+        timer = Timer()
         try:    
             cursor = self.conn.cursor()
+            
             cursor.execute(query)
+            
             self.log.WriteResult(cursor.statusmessage, True)
-            num = int(cursor.statusmessage.split(' ')[2])
-            return num
+            self.insert_num = int(cursor.statusmessage.split(' ')[2])
+        
         except psycopg2.Error as e:
             self.log.WriteError(f"Database error: {e}\n")
+            
             if 'abnormally' in str(e):
                 print("ExecuteInsert abnormally")
-                self.check_recovery_status()
                 self.log.WriteResult("ExecuteInsert check_recovery_status end", True)
                 self.error = "crash"
                 return 0
+            
             if str(e).split('\n')[0] not in errors:
                 print(str(e).split('\n')[0])
                 print(errors)
-                # exit(0)
+                exit(-1)
             self.connect()
+            self.insert_num = 0
+        
+        exe_time = timer.end()
+        self.exe_time += exe_time
+        
+        self.log.WriteResult(exe_time, True)
 
-            return 0
 
     def ExecuteUpdate(self, query: str, errors = None):
         self.clear()
         query_list = query.split(";")
         query_list = [item for item in query_list if item != ""]
+        timer = Timer()
         for query in query_list:
             self.log.WriteResult(' '.join(query.split('\n')) + ';')
             try:    
                 cursor = self.conn.cursor()
                 cursor.execute(query)
+        
                 self.log.WriteResult(cursor.statusmessage, True)
             except psycopg2.Error as e:
                 self.log.WriteError(f"Database error: {e}\n")
                 if 'abnormally' in str(e):
                     print("ExecuteUpdate abnormally")
-                    self.check_recovery_status()
                     self.error = "crash"
                     print("return")
                     return
@@ -66,21 +78,26 @@ class Executor():
                     print(errors)
                     # exit(0)
                 self.connect()    
+        exe_time = timer.end()
+        self.exe_time += exe_time
+        
+        self.log.WriteResult(exe_time, True)
 
     def ExecuteSelect(self, query: str, errors = None):
         self.clear()
         self.log.WriteResult(' '.join(query.split('\n')))
+        timer = Timer()
         try:    
             cursor = self.conn.cursor()
             cursor.execute(query)
+            
             self.rows = cursor.fetchall()
-            self.log.WriteResult(str(self.rows), True)
+            self.log.WriteResult(self.rows, True)
             
         except psycopg2.Error as e:
             self.log.WriteError(f"Database error: {e}\n")
             if 'abnormally' in str(e):
                 print("ExecuteSelect abnormally")
-                self.check_recovery_status()
                 self.error = "crash"
                 return
             for error in errors:
@@ -91,21 +108,25 @@ class Executor():
                     break
             if self.error == None:
                 print(e)
+                exit(-1)
+        
+        exe_time = timer.end()
+        self.exe_time += exe_time
+        self.log.WriteResult(exe_time, True)
 
     def Execute(self, query: str) -> bool:
-        self.conn.commit()
         self.clear()
         self.log.WriteResult(' '.join(query.split('\n')))
+        timer = Timer()
+
         try:    
             cursor = self.conn.cursor()
             cursor.execute(query)
-            self.log.WriteResult(cursor.statusmessage, True)
 
         except psycopg2.Error as e:
             self.log.WriteError(f"Database error: {e}\n")
             if 'abnormally' in str(e):
                 print("Execute abnormally")
-                self.check_recovery_status()
                 self.error = "crash"
                 return
             self.log.WriteResult(self.error_list, True)
@@ -117,11 +138,14 @@ class Executor():
                     break
             if self.error == None:
                 print(e)
-                # exit(0)
+                exit(-1)
             
-            return False
-        cursor.close()
-        return True
+        exe_time = timer.end()
+        self.exe_time += exe_time
+        
+        self.log.WriteResult(exe_time, True)
+        self.log.WriteResult(cursor.statusmessage, True)
+
     
     def ExecuteQueries(self, queries, errors):
         for q in queries:
@@ -168,3 +192,8 @@ class Executor():
     def clear(self):
         self.error = None
         self.rows = None
+        self.insert_num = None
+
+
+
+        
