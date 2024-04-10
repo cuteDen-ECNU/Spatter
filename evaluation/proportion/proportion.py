@@ -71,6 +71,6 @@ plot("DuckDB Spatial", "src/duckdb/duckdb-spatter/log/spatter")
 
 
 plt.tight_layout()
-plt.savefig('evaluation/proportion/efficiency_study.pdf')
+plt.savefig('doc/proportion/efficiency_study.pdf')
 
 
