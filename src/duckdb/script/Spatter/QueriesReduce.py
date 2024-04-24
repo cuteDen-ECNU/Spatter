@@ -122,16 +122,16 @@ class QueriesReducor:
                 return False
             else:
                 self.executor.log.WriteResult(f'Difference in a1.id = {id1} and a2.id = {id2} is caused by single query', True)
-                
+                self.executor.log.WriteResult(f'SELECT ST_AsText(geom) FROM t0 WHERE id = {id1} or id = {id2};', True)
+                self.executor.log.WriteResult(f'SELECT ST_AsText(geom) FROM t1 WHERE id = {id1} or id = {id2};', True)
+
         self.cause_type = CauseType.SingleQuery
 
-
+        
         return True
 
-    def GetAllQueriesByJson(self, json_path):
+    def GetAllQueriesByDict(self, d):
         assert(len(self.t0_queries_list) == 0)
-        with open(json_path) as of:
-            d = json.load(of)
         self.query1 = d["query1"].strip()
         self.query2 = d["query2"].strip()
         t0_queries = d["t0_queries"].split(';')
@@ -140,6 +140,18 @@ class QueriesReducor:
             if q.startswith('INSERT INTO t0'):
                 self.insert_queries_list.append(q)
 
+    def GetAllQueriesByJson(self, json_path):
+        assert(len(self.t0_queries_list) == 0)
+        with open(json_path) as of:
+            d = json.load(of)
+        self.query1 = d["query1"].strip()
+        self.query2 = d["query2"].strip()
+        t0_queries = d["t0_queries"].split(';')
+        self.t0_queries_list = [q.strip() + ';' for q in t0_queries if q != '']
+        for q in self.t0_queries_list:
+            if q.startswith('INSERT INTO t0'):
+                self.insert_queries_list.append(q)
+    
     def GetAllQueriesByline(self, spatter_path):
         assert(len(self.t0_queries_list) == 0)
         with open(spatter_path) as of:
@@ -155,6 +167,7 @@ class QueriesReducor:
                     self.insert_queries_list.append(line)
                 
                 line = of.readline()
+
 
 
 

@@ -117,6 +117,11 @@ class RandomQueryGenerator():
         if table_relation[t0] == ORACLE.PointOnSurface or table_relation[t1] == ORACLE.PointOnSurface:
             remove_list.add(GeometryRelation2D.TOUCHES)
         
+        if table_relation[t0] == ORACLE.CollectionHomogenize or table_relation[t1] == ORACLE.CollectionHomogenize:
+            remove_list.add(GeometryRelation2D.CONTAINS)
+            remove_list.add(GeometryRelation2D.WITHIN)
+            remove_list.add(GeometryRelation2D.EQUALS)
+        
         if (table_relation[t0] in [ORACLE.ForcePolygonCCW, ORACLE.ForcePolygonCW, ORACLE.Normalize,
                            ORACLE.Multi, ORACLE.ForceCollection, ORACLE.CollectionHomogenize]
         or table_relation[t1] in [ORACLE.ForcePolygonCCW, ORACLE.ForcePolygonCW, ORACLE.Normalize,

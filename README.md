@@ -26,6 +26,7 @@ geos_new='0aef713ac930e7247c50a1ae720c36f0f0bf790a'
 docker exec ${docker_name} sh /script/compile/compile.sh ${postgis_new} ${geos_new}
 
 # Start postgres, create database, and create extension:
+./init-docker/prepare-psql.sh ${docker_name}
 ./init-docker/start-psql.sh ${docker_name}
 
 # How to set parameter:

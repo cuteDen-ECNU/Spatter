@@ -63,6 +63,7 @@ class Spatter():
         self.spatter_time = Timer()
         
         self.log.WriteResult(json.dumps(configure.d), True)
+        self.executor.Execute("SET enable_seqscan = false;")
 
         ic = IndexCreator()
         self.CreateTable("t0")
@@ -263,12 +264,14 @@ class Spatter():
                     json.dump(d, of)
                 self.induce_num += 1
 
-                # reduce.SetErrors(insertErrorBox.errors + randomQueryGenerator.errors)
-                # reduce.Reduce(randomQueryGenerator.query_pair[0], randomQueryGenerator.query_pair[1])
+                
+                qr = QueriesReducor(self.executor)
+                qr.GetAllQueriesByDict(d)
+                queryError = ['GEOSOverlaps', 'GeoContains', 'TopologyException', 'This function only accepts LINESTRING as arguments.']        
+                qr.SetErrors(insertErrorBox.errors + queryError)
 
-                # if reduce.cause_type == None:
-                #     self.log.WriteResult("reduce.cause_type == None", note=True)
-                    # exit(0)
+                if qr.IsKownIssue() == False:
+                    exit(-1)
 
         self.log.WriteResult(self.executor.exe_time, True)
         self.log.WriteResult(self.spatter_time.end(), True)

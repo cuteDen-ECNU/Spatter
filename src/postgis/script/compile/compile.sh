@@ -19,6 +19,7 @@ make install
 cd /geos
 git config --global --add safe.directory /geos
 git checkout $geos_new
+rm -r build
 mkdir build
 cd build
 ../configure
@@ -30,6 +31,7 @@ make install
 cd /postgis
 git config --global --add safe.directory /postgis
 git checkout $postgis_new
+make distclean
 ./autogen.sh
 CFLAGS="-O0" CPPFLAGS="-O0" \
 LDFLAGS="" \

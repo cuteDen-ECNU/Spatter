@@ -17,7 +17,7 @@ class CoverageRecordor:
     def __init__(self, configure: Configure) -> None:
         self.type = configure.GetName()
         self.init_time = time.localtime()
-        name = time.strftime("%Y-%m-%H:%M:%S", self.init_time) 
+        name = time.strftime("%Y-%m-%d-%H:%M:%S", self.init_time) 
         coverage_directory = "/log/coverage"
         if not os.path.exists(coverage_directory):
             os.makedirs(coverage_directory)
@@ -123,12 +123,12 @@ class CoverageRecordor:
 
 
     def Writefile(self):
-        name = time.strftime("%Y-%m-%H:%M:%S", self.init_time) 
+        name = time.strftime("%Y-%m-%d-%H:%M:%S", self.init_time) 
 
-        with open(f"log/coverage/postgis-{self.type}-{name}.txt", "w") as of:
+        with open(f"log/coverage/postgis-{name}.txt", "w") as of:
             for e in self.postgis_sec_to_coverage_list:
                 of.write(str(e) + "\n")
     
-        with open(f"log/coverage/geos-{self.type}-{name}.txt", "w") as of:
+        with open(f"log/coverage/geos-{name}.txt", "w") as of:
             for e in self.geos_sec_to_coverage_list:
                 of.write(str(e) + "\n")

@@ -69,20 +69,53 @@ class Spatter():
         
         i = 0
         while(i < smart_n):
-            insert_func = random.choice(insert_type)
+            insert_func = random.choices(insert_type, weights=list(InsertGenerator.insert_weights.values()), k = 1)[0]
             if insert_func == InsertGenerator.InsertType.Boundary:
                 query = InsertGenerator.insertBoundary("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.CollectionExtract:
                 query = InsertGenerator.insertCollectionExtract("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.ConvexHull:
                 query = InsertGenerator.insertConvexHull("t0", random_n + i)
-            elif insert_func == InsertGenerator.InsertType.Collect:
-                query = InsertGenerator.insertCollect("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.Collect0:
+                query = InsertGenerator.insertCollect0("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.Collect1:
+                query = InsertGenerator.insertCollect1("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.Collect2:
+                query = InsertGenerator.insertCollect2("t0", random_n + i)
             elif insert_func == InsertGenerator.InsertType.Normalize:
                 query = InsertGenerator.insertNormalize("t0", random_n + i)
+                insertErrorBox.useNormalize()
             elif insert_func == InsertGenerator.InsertType.MakeLine:
                 query = InsertGenerator.insertMakeLine("t0", random_n + i)
                 insertErrorBox.useMakeLine()
+            elif insert_func == InsertGenerator.InsertType.MakePolygon:
+                query = InsertGenerator.insertMakePolygon("t0", random_n + i)
+                insertErrorBox.useMakePolygon()
+            elif insert_func == InsertGenerator.InsertType.Envelope:
+                query = InsertGenerator.insertEnvelope("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.FlipCoordinates:
+                query = InsertGenerator.insertFlipCoordinates("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.PointN:
+                query = InsertGenerator.insertPointN("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.StartPoint:
+                query = InsertGenerator.insertStartPoint("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.EndPoint:
+                query = InsertGenerator.insertEndPoint("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.ExteriorRing:
+                query = InsertGenerator.insertExteriorRing("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.Reverse:
+                query = InsertGenerator.insertReverse("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.RemoveRepeatedPoints:
+                query = InsertGenerator.insertRemoveRepeatedPoints("t0", random_n + i)
+                insertErrorBox.useRemoveRepeatedPoints()
+            elif insert_func == InsertGenerator.InsertType.LineMerge:
+                query = InsertGenerator.insertLineMerge("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.Dump:
+                query = InsertGenerator.insertDump("t0", random_n + i)
+            elif insert_func == InsertGenerator.InsertType.PointOnSurface:
+                query = InsertGenerator.insertPointOnSurface("t0", random_n + i)            
+            elif insert_func == InsertGenerator.InsertType.NULL:
+                query = InsertGenerator.insertNull("t0", random_n + i)
             else:
                 print(insert_func)
                 exit(-1)
@@ -117,11 +150,17 @@ class Spatter():
                 query = tu.updateTableFlipCoordinates(t)
             elif tu.relation[t] == ORACLE.Collect:
                 query = tu.updateTableCollect(t)
-
+            elif tu.relation[t] == ORACLE.Collect0:
+                query = tu.updateTableCollect0(t)
+            elif tu.relation[t] == ORACLE.Reverse:
+                query = tu.updateTableReverse(t)
+            elif tu.relation[t] == ORACLE.RemoveRepeatedPoints:
+                query = tu.updateTableRemoveRepeatedPoints(t)
+            
             else:
                 print(tu.relation[t])
                 exit(-1)
-            self.executor.Execute(query)
+            self.executor.ExecuteUpdate(query)
             if self.executor.error == "crash":
                 self.RecordCrash(query)     
             
@@ -165,6 +204,14 @@ class Spatter():
                 with open(file_path, 'w') as of:
                     json.dump(d, of)
                 self.induce_num += 1
+
+                qr = QueriesReducor(self.executor)
+                qr.GetAllQueriesByDict(d)
+                queryError = ['GEOSOverlaps', 'GeoContains', 'TopologyException', 'This function only accepts LINESTRING as arguments.']        
+                qr.SetErrors(insertErrorBox.errors + queryError)
+
+                if qr.IsKownIssue() == False:
+                    exit(-1)
         
         self.log.WriteResult(self.executor.exe_time, True)
         self.log.WriteResult(self.spatter_time.end(), True)

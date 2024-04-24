@@ -11,7 +11,7 @@ class Executor():
         self.conn = duckdb.connect(database=self.db, config = self.c)
 
 
-        self.conn.execute("FORCE INSTALL spatial FROM 'http://nightly-extensions.duckdb.org';")
+        self.conn.execute("INSTALL 'duckdb_spatial/build/debug/extension/spatial/spatial.duckdb_extension';")
         self.conn.execute("LOAD spatial;")
         self.log: Log = log
         self.rows = []
@@ -78,8 +78,7 @@ class Executor():
     
     def ExecuteUpdate(self, query: str, errors = None):
         self.clear()
-        query_list = query.split(";")
-        query_list = [item for item in query_list if item != ""]
+        query_list = [item for item in query.split(";") if item.strip() != ""]
         timer = Timer()
         for query in query_list:
             self.log.WriteResult(' '.join(query.split('\n')) + ';')
@@ -89,7 +88,7 @@ class Executor():
                 self.log.WriteResult(str(self.rows), True)
             except duckdb.Error as e:
                 self.error_occur = True
-                self.log.WriteError(f"executeSelect error: {e}\n")
+                self.log.WriteError(f"ExecuteUpdate error: {e}\n")
                 for error in errors:
                     e_first_line = str(e).split('\n')[0]
                     if (error in str(e)) or (e_first_line in error):

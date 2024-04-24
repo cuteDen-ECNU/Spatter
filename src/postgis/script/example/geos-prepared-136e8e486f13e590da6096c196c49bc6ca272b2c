@@ -1,0 +1,5 @@
+{"t0_queries":"DROP table t;CREATE table t (id int, geom geometry);INSERT INTO t (id, geom) VALUES (1,ST_GeomFromText('GEOMETRYCOLLECTION(MULTIPOINT((-60 -50),(-63 -49)))'));INSERT INTO t (id, geom) VALUES (2,ST_GeomFromText('GEOMETRYCOLLECTION(MULTIPOINT((-60 -50),(-63 -49)))'));INSERT INTO t (id, geom) VALUES (3,ST_GeomFromText('MULTIPOLYGON(((-60 -50,-70 -50,-60 -40,-60 -50)))'));DROP table t1;CREATE table t1 (id int, geom geometry);INSERT INTO t1 SELECT id, geom FROM t;UPDATE t1 SET geom = ST_ForceCollection(geom);"
+, "query1":"SELECT COUNT(*) FROM t As a1, t As a2 WHERE ST_Contains(a1.geom, a2.geom) and a1.id <> a2.id;"
+, "query2":"SELECT COUNT(*) FROM t1 As a1, t1 As a2 WHERE ST_Contains(a1.geom, a2.geom) and a1.id <> a2.id;"
+, "res1":"[(3,)]"
+, "res2":"[(4,)]"}

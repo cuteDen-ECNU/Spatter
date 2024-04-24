@@ -58,90 +58,53 @@ docker exec ${docker_name} sh /script/compile/check_gcov.sh
 ```
 
 Then we can collect coverage info and induce cases.
+For Geometry-Aware Generator:
 ```shell
 docker exec -it ${docker_name} sh -c "python3 ./script/CoverageTest.py"
 # terminate Spatter
 docker exec $docker_name sh -c 'script/script/kill-python.sh'
+docker cp $docker_name:/log ../../doc/unique-bugs/geometry-aware-gen
 ```
 
+For Random-Shape Strategy:
+```shell
+docker exec -it ${docker_name} sh -c "python3 ./script/CoverageTest.py --smart_generator_on=0"
+# terminate Spatter
+docker exec $docker_name sh -c 'script/script/kill-python.sh'
+docker cp $docker_name:/log ../../doc/unique-bugs/random-shape-gen
+```
 
 ## Binary search for unique bugs 
 
 ### 1. Compile commits of PostGIS and GEOS 
 ```shell
+docker_name=postgis-spatter
 docker cp script ${docker_name}:/
-docker exec -it ${docker_name} sh -c "cd /postgis; git log --format='%h %cd' --date=format:'%Y-%m-%d-%H:%M:%S' --invert-grep --grep='Translated' ${postgis_old}^..HEAD > /log/postgis-hash"
+docker exec -it ${docker_name} sh -c "cd /postgis; git log --format='%h %cd' --date=format:'%Y-%m-%d-%H:%M:%S' --since='2023-10-20' > /log/postgis-hash"
 
-docker exec -it ${docker_name} sh -c "cd /geos; git log --format='%h %cd' --date=format:'%Y-%m-%d-%H:%M:%S'  ${geos_old}^..HEAD > /log/geos-hash"
+docker exec -it ${docker_name} sh -c "cd /geos; git log --format='%h %cd' --date=format:'%Y-%m-%d-%H:%M:%S' --since='2023-10-20' > /log/geos-hash"
 
 docker exec -it ${docker_name} sh -c "pip install tqdm"
-docker exec -it ${docker_name} sh -c "python3 script/compile/compile-commits.py --module postgis"
-docker exec -it ${docker_name} sh -c "python3 script/compile/compile-commits.py --module geos"
+docker exec -it ${docker_name} sh -c "python3 script/compile/geos-compile-commits.py"
+docker exec -it ${docker_name} sh -c "python3 script/compile/postgis-compile-commits.py"
 ```
 
-### 2. Check compiling results of PostGIS
+### 2. Check Compiling Results by Reproduction
+
 ```shell
-EXPECTED_VERSION=c1dbf8ef0
-docker exec -it ${docker_name} sh -c "cd postgis-commits/$EXPECTED_VERSION/postgis;make install"
-docker exec -it ${docker_name} /usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -c "DROP extension postgis CASCADE; CREATE extension postgis; SELECT postgis_full_version() LIKE '%$EXPECTED_VERSION%' AS check_result;"
+docker_name=postgis-spatter
+# docker exec -it ${docker_name} sh -c "rm -r /log/example/*.log"
+docker exec -it ${docker_name} sh -c "python3 /script/binary-search.py /log/example"
+docker exec -it ${docker_name} sh -c "cat /log/example-bisection.log"
 ```
-If you encounter issues, please refer to [Step 1](#1-compile-commits-of-postgis-and-geos) for compiling PostGIS and GEOS commits.
+If all the test cases are fixed, the [Step 1](#1-compile-commits-of-postgis-and-geos) successed. 
 
+### 3. Binary Search for Trigger Cases
 
-### 3. Check compiling results of GEOS
-Check whether crash reproduced:
 ```shell
-REPRO_VERSION=34b29f889
-docker exec -it ${docker_name} sh -c "cd geos-commits/$REPRO_VERSION/geos/build;make install"
-docker exec -it ${docker_name} sh -c "/usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -f /script/script/check-geos.sql"
-```
-Check whether crash fixed:
-```shell
-FIX_VERSION=bb1a02679
-docker exec -it ${docker_name} sh -c "cd geos-commits/$FIX_VERSION/geos/build;make install"
-docker exec -it ${docker_name} sh -c "/usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -f /script/script/check-geos.sql"
+# docker exec -it ${docker_name} sh -c "rm -r /log/trigger-case/*.log"
+docker exec -it ${docker_name} sh -c "python3 /script/binary-search.py /log/trigger-case"
+
 ```
 
 
-
-# Save data
-```
-docker cp $docker_name:/log ../../doc/unique-bugs/2024-01-08-07
-```
-
-<!-- 
-Compile DuckDB Spatial with gcov:
-```
-cd <Spatter-root>/src/duckdb
-docker_name=duckdb-spatter
-
-# compile with gcov and check whether it is successful
-docker exec ${docker_name} sh /script/compile/compile_with_gcov.sh
-docker exec ${docker_name} sh /script/compile/check_gcov.sh
-```
-
-Then we collect the coverage info:
-```
-docker exec -it ${docker_name} sh -c "python3 ./script/CoverageTest.py"
-``` -->
-
-
-docker exec -it ${docker_name} sh -c "rm -r postgis-commits"
-docker exec -it ${docker_name} sh -c "ls -l postgis-commits"
-docker exec -it ${docker_name} sh -c "ps -elf |grep python"
-docker restart ${docker_name}
-
-docker exec -it ${docker_name} sh -c "cd geos; git pull origin main"
-
-docker exec -it ${docker_name} /usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -c "DROP extension postgis CASCADE;"
-docker exec -it ${docker_name} /usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -c "CREATE extension postgis;"
-
-
-docker exec -it ${docker_name} sh -c "python3 /script/binary-search.py /log/json_induce_case_example"
-
-docker exec -it ${docker_name} sh -c "rm /log/json_induce_case_example/*.log"
-docker exec -it ${docker_name} sh -c "/usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -f /script/script/test.sql"
-docker exec -it ${docker_name} /usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -c "SELECT postgis_extensions_upgrade();"
-docker exec -it ${docker_name} /usr/local/pgsql/bin/psql -U postgres -h localhost -p 5432 -d nyc -f /postgis-commits/86db77037/postgis/extensions/postgis/sql/postgis_upgrade.sql"
-
-docker exec -it ${docker_name} sh -c "find . -name postgis_upgrade.sql"

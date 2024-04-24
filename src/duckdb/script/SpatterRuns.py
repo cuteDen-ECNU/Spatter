@@ -34,7 +34,7 @@ if __name__ == '__main__':
     c = Configure()
     c.ReadDict(d)
     
-    for i in range(0, 100):
+    for i in range(0, 100000):
         random.seed(i)
         spatter = Spatter(i)
         spatter.Spatter(c)

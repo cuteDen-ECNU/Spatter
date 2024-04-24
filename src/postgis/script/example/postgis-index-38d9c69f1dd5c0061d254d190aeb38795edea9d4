@@ -1,0 +1,6 @@
+{"t0_queries":"DROP TABLE IF EXISTS t0; CREATE TABLE t0 (id int, geom geometry); INSERT INTO t0 (id, geom) VALUES (1,ST_GeomFromText('GEOMETRYCOLLECTION EMPTY')); INSERT INTO t0 (id, geom) VALUES (2,NULL); INSERT INTO t0 (id, geom) VALUES (3,ST_GeomFromText('GEOMETRYCOLLECTION EMPTY')); INSERT INTO t0 (id, geom) VALUES (4,NULL); DROP TABLE IF EXISTS t1;  CREATE TABLE t1 (id int, geom geometry); INSERT INTO t1 (id, geom) SELECT id, geom FROM t0; CREATE INDEX idx ON t1 USING GIST (geom);"
+, "query1": "SELECT COUNT(*)         FROM t0 As a1          RIGHT OUTER JOIN t0 As a2 ON ST_Equals(a1.geom, a2.geom)          WHERE   a1.id <> a2.id;"
+, "res1": "[(2,)]" 
+, "query2": "SELECT COUNT(*)         FROM t1 As a1          RIGHT OUTER JOIN t1 As a2 ON ST_Equals(a1.geom, a2.geom)          WHERE   a1.id <> a2.id;"
+, "res2": "[(0,)]" 
+}

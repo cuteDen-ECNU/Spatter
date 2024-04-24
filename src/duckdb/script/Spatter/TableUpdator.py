@@ -9,9 +9,12 @@ from Spatter.Configure import *
 class ORACLE(enum.Enum):
     DoNothing = enum.auto()
     Collect = enum.auto()
+    Collect0 = enum.auto()
     Normalize = enum.auto()
     PointOnSurface = enum.auto()
     FlipCoordinates = enum.auto()
+    Reverse = enum.auto()
+    RemoveRepeatedPoints = enum.auto()
 
 class TableUpdator():
     def __init__(self, configure: Configure) -> None:
@@ -19,6 +22,8 @@ class TableUpdator():
         self.update_first = None
         self.table_list = []
         self.oracle_list = list(ORACLE)
+        self.oracle_list.remove(ORACLE.Collect)
+        self.oracle_list.remove(ORACLE.DoNothing)
         
     def SelectOracle(self, table_list):
         self.table_list = copy.deepcopy(table_list)
@@ -40,13 +45,15 @@ class TableUpdator():
 
     def updateTablePointOnSurface(self, table: str):
         query = f'''UPDATE {table} 
-        SET geom = ST_Collect([ST_PointOnSurface(geom), geom]);
+        SET geom = ST_Collect([ST_PointOnSurface(geom), geom]) 
+        WHERE geom is not NULL and valid = true;
         '''
         return query
         
     def updateTableNormalize(self, table: str):
         query = f'''UPDATE {table} 
-        SET geom = ST_Normalize(geom);
+        SET geom = ST_Normalize(geom)
+        WHERE valid = true;
         '''
         return query
     
@@ -58,8 +65,33 @@ class TableUpdator():
     
     def updateTableCollect(self, table: str):
         query = f'''UPDATE {table} 
-        SET geom = ST_Collect([geom]);
+        SET geom = ST_Collect([geom])
+        WHERE geom is not NULL;
         '''
+        return query
+    
+    def updateTableCollect0(self, table: str):
+        empty = random.choice(['POINT EMPTY', 'LINESTRING EMPTY', 'POLYGON EMPTY',
+                               'MULTIPOINT EMPTY', 'MULTILINESTRING EMPTY', 
+                               'MULTIPOLYGON EMPTY', 'GEOMETRYCOLLECTION EMPTY'])
+        collect_list = [f'''ST_GeomFromText('{empty}'), t1.geom''', f'''t1.geom, ST_GeomFromText('{empty}')''']
+        query = f'''UPDATE {table} 
+        SET geom = ST_Collect([{random.choice(collect_list)}])
+        WHERE geom is not NULL;
+        '''
+        return query
+    
+
+    def updateTableReverse(self, table: str):
+        query = f'''UPDATE {table} 
+        SET geom = ST_Reverse(geom)
+        WHERE valid = true;'''
+        return query
+    
+    def updateTableRemoveRepeatedPoints(self, table: str):
+        query = f'''UPDATE {table} 
+        SET geom = ST_RemoveRepeatedPoints(geom)
+        WHERE valid = true;'''
         return query
     
 

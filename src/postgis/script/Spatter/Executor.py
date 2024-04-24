@@ -15,7 +15,7 @@ class Executor():
         self.log: Log = log
         self.rows = []
         self.error = None
-        self.error_list = ['TopologyException']
+        self.error_list = ['TopologyException', 'extension "postgis" does not exist', 'table "t" does not exist']
         self.insert_num = None
 
         self.exe_time = 0
@@ -37,15 +37,23 @@ class Executor():
             
             if 'abnormally' in str(e):
                 print("ExecuteInsert abnormally")
-                self.log.WriteResult("ExecuteInsert check_recovery_status end", True)
                 self.error = "crash"
-                return 0
+                self.check_recovery_status()
+                self.log.WriteResult("ExecuteInsert check_recovery_status end", True)
+                self.insert_num = 0
+                return 
             
-            if str(e).split('\n')[0] not in errors:
-                print(str(e).split('\n')[0])
+            for error in errors:
+                e_first_line = str(e).split('\n')[0]
+                if (error in str(e)) or (e_first_line in error):
+                    self.connect()
+                    self.error = error
+                    break
+            if self.error == None:
+                print(e)
                 print(errors)
                 exit(-1)
-            self.connect()
+
             self.insert_num = 0
         
         exe_time = timer.end()
@@ -71,13 +79,19 @@ class Executor():
                 if 'abnormally' in str(e):
                     print("ExecuteUpdate abnormally")
                     self.error = "crash"
-                    print("return")
+                    self.check_recovery_status()
+                    self.log.WriteResult("ExecuteUpdate check_recovery_status end", True)
                     return
-                if str(e).split('\n')[0] not in errors:
-                    print(str(e).split('\n')[0])
-                    print(errors)
-                    # exit(0)
-                self.connect()    
+                for error in errors:
+                    e_first_line = str(e).split('\n')[0]
+                    if (error in str(e)) or (e_first_line in error):
+                        self.connect()
+                        self.error = error
+                        break
+                if self.error == None:
+                    print(e)
+                    exit(-1)
+
         exe_time = timer.end()
         self.exe_time += exe_time
         
@@ -92,13 +106,15 @@ class Executor():
             cursor.execute(query)
             
             self.rows = cursor.fetchall()
-            self.log.WriteResult(self.rows, True)
+            self.log.WriteResult(self.rows, True) 
             
         except psycopg2.Error as e:
             self.log.WriteError(f"Database error: {e}\n")
             if 'abnormally' in str(e):
                 print("ExecuteSelect abnormally")
                 self.error = "crash"
+                self.check_recovery_status()
+                self.log.WriteResult("ExecuteSelect check_recovery_status end", True)
                 return
             for error in errors:
                 e_first_line = str(e).split('\n')[0]
@@ -122,12 +138,15 @@ class Executor():
         try:    
             cursor = self.conn.cursor()
             cursor.execute(query)
+            self.conn.commit()
 
         except psycopg2.Error as e:
             self.log.WriteError(f"Database error: {e}\n")
             if 'abnormally' in str(e):
                 print("Execute abnormally")
                 self.error = "crash"
+                self.check_recovery_status()
+                self.log.WriteResult("Execute check_recovery_status end", True)
                 return
             self.log.WriteResult(self.error_list, True)
             for error in self.error_list:
@@ -149,6 +168,8 @@ class Executor():
     
     def ExecuteQueries(self, queries, errors):
         for q in queries:
+            q = q.strip()
+            if len(q) <= 1: continue
             if q.startswith('SELECT'):
                 self.ExecuteSelect(q, errors)
             elif q.startswith('INSERT'):
@@ -158,8 +179,6 @@ class Executor():
             else:
                 self.Execute(q)
     
-
-
     def connect(self):
         while(1):
             try:
