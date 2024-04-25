@@ -37,8 +37,8 @@ def read_commits():
         ptime = postgis_t2commit[pi][1]
         gcommit = geos_t2commit[gi][0]
         gtime = geos_t2commit[gi][1]
-        # print(f'{pcommit}, {ptime}, {gcommit}, {gtime}, {postgis_t2commit[pi + 1][1] <= geos_t2commit[gi][1]}')
-        if (postgis_t2commit[pi + 1][1] <= geos_t2commit[gi][1]) or (gi == gn - 1):
+        print(f'{pcommit}, {ptime}, {gcommit}, {gtime}, {(postgis_t2commit[pi + 1][1] <= geos_t2commit[gi][1]) or (gi == gn - 1) or (gi == 0)}')
+        if (postgis_t2commit[pi + 1][1] <= geos_t2commit[gi][1]) or (gi == gn - 1) or (gi == 0):
             pcommit2gcommits.append([pcommit, gcommit, ptime, gtime])
             gi += 1
         else:
@@ -50,7 +50,7 @@ def read_commits():
 def compile(pcommit2gcommits):
     print(len(pcommit2gcommits))
     # for line in tqdm(concurrent.futures.as_completed(futures), total=len(commits), desc="Compiling"):
-    for line in tqdm(pcommit2gcommits[78:]):
+    for line in tqdm(pcommit2gcommits):
         pcommit, gcommit, ptime, gtime = line[0], line[1], line[2], line[3]
 
         target_path = f"/postgis-commits/{pcommit}-{gcommit}/postgis"
@@ -74,6 +74,7 @@ make clean
 make -j8
 make install
 '''
+        tqdm.write(f"{pcommit}-{gcommit} install begin!")
         try:
             subprocess.run(commands, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             with open(f"/log/compile-postgis.log", 'a') as of:

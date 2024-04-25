@@ -4,12 +4,12 @@ geos_new=$2
 
 rm -r /usr/local/pgsql/
 
-rm -r /postgres
-git clone https://github.com/postgres/postgres.git || exit -1
-rm -r /geos
-git clone https://github.com/libgeos/geos.git || exit -1
-rm -r /postgis
-git clone https://github.com/postgis/postgis.git || exit -1
+# rm -r /postgres
+# git clone https://github.com/postgres/postgres.git || exit -1
+# rm -r /geos
+# git clone https://github.com/libgeos/geos.git || exit -1
+# rm -r /postgis
+# git clone https://github.com/postgis/postgis.git || exit -1
 
 cd /postgres
 ./configure --without-readline --without-icu

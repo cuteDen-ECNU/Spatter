@@ -97,6 +97,6 @@ if __name__ == "__main__":
     module = "geos"
     commits = read_commits(f"/log/{module}-hash")
     # 设置max_workers为None，让系统自动选择合适的核心数
-    compile_parallel(commits, module, max_workers=8)
+    compile_parallel(commits, module, max_workers=4)
     
     collect_records(module)  # Call this function after all processes are done
