@@ -132,7 +132,7 @@ docker exec ${docker_name} sh /script/compile/compile.sh
 ```shell
 docker exec -it ${docker_name} sh -c "./script/SpatterRun.py"
 ```
-# Reduce a single trigger case:
+6. Reduce a Single Trigger Case:
 ```shell
 trigger_path=$(docker exec -it ${docker_name} sh -c 'echo /log/trigger-cases/* | cut -d" " -f1')
 docker exec -it ${docker_name} sh -c "./script/SpatterReduce.py ${trigger_path}"

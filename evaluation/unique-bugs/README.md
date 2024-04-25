@@ -48,9 +48,21 @@ cd <Spatter-root>/src/postgis
 ```
 
 2. Compile PostGIS with gcov:
+Copy postgis source code from "src/postgis/script/src-repo"
 ```shell
-# compile
+docker exec ${docker_name} sh -c "mv /script/src-repo/postgres-main /postgres"
+docker exec ${docker_name} sh -c "mv /script/src-repo/geos-main /geos"
+docker exec ${docker_name} sh -c "mv /script/src-repo/postgis-main /postgis"
+```
 
+Or choose the newest version of PostGIS through github:
+```shell
+docker exec ${docker_name} sh -c "git clone https://github.com/postgres/postgres.git || exit -1"
+docker exec ${docker_name} sh -c "git clone https://github.com/libgeos/geos.git || exit -1"
+docker exec ${docker_name} sh -c "git clone https://github.com/postgis/postgis.git || exit -1"
+```
+Begin to compile:
+```shell
 postgis_old='89fb96385'
 geos_old='0dc190160'
 docker exec ${docker_name} sh /script/compile/compile_with_gcov.sh ${postgis_old} ${geos_old}
@@ -89,9 +101,9 @@ docker exec $docker_name sh -c 'script/script/kill-python.sh'
 docker cp $docker_name:/log ../../doc/unique-bugs/random-shape-gen
 ```
 
-## Binary search for unique bugs 
+## Binary Search for Unique Bugs
 
-### Compile commits of PostGIS and GEOS (Time Consuming)
+### Compile Commits of PostGIS and GEOS (Time Consuming)
 
 1. Creating a new docker to avoid gcov residue <a id="restart"></a>
 
@@ -107,6 +119,21 @@ cd <Spatter-root>/src/postgis
 ```
 
 2. Compile the newest version of Postgis
+
+Copy postgis source code from "src/postgis/script/src-repo"
+```shell
+docker exec ${docker_name} sh -c "mv /script/src-repo/postgres-main /postgres"
+docker exec ${docker_name} sh -c "mv /script/src-repo/geos-main /geos"
+docker exec ${docker_name} sh -c "mv /script/src-repo/postgis-main /postgis"
+```
+
+Or choose the newest version of PostGIS through github:
+```shell
+docker exec ${docker_name} sh -c "git clone https://github.com/postgres/postgres.git || exit -1"
+docker exec ${docker_name} sh -c "git clone https://github.com/libgeos/geos.git || exit -1"
+docker exec ${docker_name} sh -c "git clone https://github.com/postgis/postgis.git || exit -1"
+```
+Begin to compile:
 ```shell
 postgis_new='07a73c0f2'
 geos_new='0a8fc37a9'

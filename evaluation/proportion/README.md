@@ -44,9 +44,9 @@ spatter: 5803.981223106384 &plusmn; 2264.00153011549
 dbms: 5789.749295711517 &plusmn; 2263.702746210628  
 
 
-## Reproduce the result
+## Reproduce
 
-generation for PostGIS
+Run Spatter for PostGIS
 ```
 cd src/postgis
 docker_name=postgis-spatter
@@ -57,7 +57,7 @@ docker exec -it ${docker_name} sh -c "./script/SpatterRun.py --geometry_number 5
 docker exec -it ${docker_name} sh -c "./script/SpatterRun.py --geometry_number 100"
 ```
 
-generation for MySQL GIS
+Run Spatter for MySQL GIS
 ```
 cd src/mysql
 docker_name=mysql-spatter
@@ -68,7 +68,7 @@ docker exec -it ${docker_name} sh -c "./script/SpatterRun.py --geometry_number 5
 docker exec -it ${docker_name} sh -c "./script/SpatterRun.py --geometry_number 100"
 ```
 
-generation for DuckDB Spatial
+Run Spatter for DuckDB Spatial
 ```
 cd src/duckdb
 docker_name=duckdb-spatter
@@ -79,8 +79,4 @@ docker exec -it ${docker_name} sh -c "./script/SpatterRun.py --geometry_number 5
 docker exec -it ${docker_name} sh -c "./script/SpatterRun.py --geometry_number 100"
 ```
 
-Generate the result:
-```
-python3 evaluation/proportion/proportion.py
-```
 
