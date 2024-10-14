@@ -9,7 +9,7 @@ Spatter is a tool for finding Spatial related bugs in Spatial DBMS using Shape-P
 + DuckDB
 
 ## Effectiveness
-+ [New bugs.](doc/bugs-reccord/README.md)
++ [New bugs.](https://github.com/cuteDen-ECNU/bugs-record)
 
 ## Step by Step
 
